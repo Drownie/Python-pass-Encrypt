@@ -1,4 +1,5 @@
-from tkinter import StringVar, Toplevel, ttk, Tk
+from faulthandler import disable
+from tkinter import StringVar, Toplevel, ttk, Tk, END
 from functions import Functions
 
 class authentication(Tk):
@@ -153,6 +154,69 @@ class app(Toplevel):
     def update(self):
         self.update_idletasks()
 
+class dataApp(Tk):
+    def __init__(self):
+        super().__init__()
+
+        # App setting
+        self.page = 4
+        self.n = 39
+
+        # Window setting
+        self.title("Data App")
+        self.geometry("500x260")
+        self.resizable(False, False)
+
+        # Configure grid
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
+
+        # Define columns
+        col = ('id', 'site', 'username', 'pwd')
+
+        # Row 1
+        self.tree = ttk.Treeview(self, columns=col, show='headings')
+        self.tree.grid(row=0, column=0, columnspan=3)
+
+        self.tree.column('id', width=40, anchor='c')
+        self.tree.column('site', width=180, anchor='c')
+        self.tree.column('username', width=180, anchor='c')
+        self.tree.column('pwd', width=100, anchor='c')
+
+        # Define headings
+        self.tree.heading('id', text="Id")
+        self.tree.heading('site', text="Site")
+        self.tree.heading('username', text="Username")
+        self.tree.heading('pwd', text="Password")
+
+        # fill the tree
+        tmpData = [{'site': 'linux.com', 'username': 'drownie10@linux.com', 'password': '12345'}, {'site': 'www.android.com', 'username': 'drownie134@gmail.com', 'password': '123444'}, {'site': 'www.android.com', 'username': 'drownie1@gmail.com', 'password': '123444'}, {'site': 'linux.com', 'username': 'drownie20@linux.com', 'password': '12345'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}, {'site': 'www.google.com', 'username': 'drownie4@gmail.com', 'password': '123444'}]
+        for id, data in enumerate(tmpData):
+            self.tree.insert('', END, values=(id+1, data['site'], data['username'], data['password']))
+        
+        # Row 2
+        self.prevButton = ttk.Button(self, text="Prev")
+        self.prevButton.grid(row=1, column=0)
+        if self.page > 1:
+            self.prevButton['state'] = 'active'
+        else:
+            self.prevButton['state'] = 'disabled'
+
+        self.pageVal = StringVar()
+        self.pageVal.set(f"{self.page} / {int(self.n / 10) + 1}")
+        self.pageLabel = ttk.Label(self, textvariable=self.pageVal)
+        self.pageLabel.grid(row=1, column=1)
+
+        self.nextButton = ttk.Button(self, text="Next")
+        self.nextButton.grid(row=1, column=2, padx=60)
+        if self.n > self.page * 10:
+            self.nextButton['state'] = 'active'
+        else:
+            self.nextButton['state'] = 'disabled'
+
 if __name__ == "__main__":
-    test = authentication()
+    test = dataApp()
     test.mainloop()
