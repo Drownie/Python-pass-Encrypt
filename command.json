@@ -1,0 +1,7 @@
+{
+    "create_user_table": "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,\n name CHAR(36) NOT NULL,\n password CHAR(255) NOT NULL\n,\n key CHAR(255) NOT NULL);",
+    "create_pm_table": "CREATE TABLE IF NOT EXISTS pm(id INTEGER PRIMARY KEY,\n userId INTEGER NOT NULL,\n websiteAddress CHAR(100),\n username CHAR(50) NOT NULL,\n password CHAR(20) NOT NULL,\n FOREIGN KEY(userId) REFERENCES users(id));",
+    "insert_user": "INSERT INTO users(name, password, key) VALUES(?, ?, ?);",
+    "select_users": "SELECT id, name FROM users;",
+    "find_user": "SELECT id, name, password, key FROM users WHERE name = ?;"
+}
