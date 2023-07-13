@@ -72,7 +72,7 @@ class PasswordManager():
             cursor.close()
 
             if bcrypt.checkpw(password.encode("utf-8"), passwordHash):
-                return {'success': True, 'message': "Login Successful", 'data': {userId, username, key}}
+                return {'success': True, 'message': "Login Successful", 'data': [userId, username, key]}
             return {'success': False, 'message': "Wrong Password", 'data': {}}
 
     def checkRegisteredUser(self, username: str) -> dict:
@@ -100,7 +100,7 @@ class PasswordManager():
             users = cursor.fetchall()
             for user in users:
                 print(user)
-            return {'success': True, 'message': e, 'data': users}
+            return {'success': True, 'message': '', 'data': users}
 
     def insertData(self, userid: int, key: str, data: dict) -> dict:
         pass
