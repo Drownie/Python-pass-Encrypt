@@ -36,13 +36,13 @@ class PasswordManager():
             cursor.close()
             return {'success': True, 'message': "Table Successfully Created"}
     
-    def register(self, username: str, password: str, confirmPassword: str) -> dict:
+    def register(self, username: str, password: str, confirmPassword: str, isTest: bool = False) -> dict:
         if password != confirmPassword:
             return {'success': False, 'message': "Password and Confirmation Password is not the same"}
         
-        isRegistered, reason = self.checkRegisteredUser(username).items()
-        if isRegistered:
-            return {'success': False, 'message': reason}
+        checkResult = self.checkRegisteredUser(username)
+        if checkResult['success']:
+            return {'success': False, 'message': checkResult['message']}
         
         hashedPassword = bcrypt.hashpw(password.encode("utf-8"), self.salt)
         key = Fernet.generate_key().decode("utf-8")
@@ -54,26 +54,27 @@ class PasswordManager():
             print("Error:", e)
             return {'success': False, 'message': e}
         finally:
-            self.conn.commit()
+            cursor.close()
+            if not isTest: self.conn.commit()
             return {'success': True, 'message': "User Successfully Created"}
     
     def login(self, username: str, password: str) -> dict:
-        isRegistered, reason = self.checkRegisteredUser(username)
-        if not isRegistered:
-            return {'success': False, 'message': reason, 'data': {}}
+        checkResult = self.checkRegisteredUser(username)
+        if not checkResult['success']:
+            return {'success': False, 'message': checkResult['message'], 'data': []}
         
         try:
             cursor = self.conn.cursor()
             cursor.execute(self.commands["find_user"], (username, ))
         except Error as e:
-            return {'success': False, 'message': e, 'data': {}}
+            return {'success': False, 'message': e, 'data': []}
         finally:
             userId, _, passwordHash, key = cursor.fetchone()
             cursor.close()
 
             if bcrypt.checkpw(password.encode("utf-8"), passwordHash):
                 return {'success': True, 'message': "Login Successful", 'data': [userId, username, key]}
-            return {'success': False, 'message': "Wrong Password", 'data': {}}
+            return {'success': False, 'message': "Wrong Password", 'data': []}
 
     def checkRegisteredUser(self, username: str) -> dict:
         try:
@@ -102,15 +103,40 @@ class PasswordManager():
                 print(user)
             return {'success': True, 'message': '', 'data': users}
 
-    def insertData(self, userid: int, key: str, data: dict) -> dict:
-        pass
+    def insertData(self, userId: int, key: str, data: dict, isTest: bool = False) -> dict:
+        checkResult = self.checkRegisteredUserPM(data['websiteAddress'], data['username'])
+        if checkResult['success']:
+            return {'success': False, 'message': checkResult['message']}
+        fernet = Fernet(key.encode("utf-8"))
+        encryptedPassword = fernet.encrypt(data['password'].encode("utf-8"))
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(self.commands["insert_pm"], (userId, data['websiteAddress'], data['username'], encryptedPassword))
+        except Error as e:
+            print("Error:", e)
+            return {'success': False, 'message': e}
+        finally:
+            cursor.close()
+            if not isTest: self.conn.commit()
+            return {'success': True, 'message': "Insert Data Successfull"}
+    
+    def checkRegisteredUserPM(self, websiteAddress: str, username: str) -> dict:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(self.commands["find_user_pm"], (websiteAddress, username))
+        except Error as e:
+            print("Error:", e)
+            return {'success': False, 'message': e}
+        finally:
+            account = cursor.fetchone()
+            cursor.close()
+            if account is not None:
+                return {'success': True, 'message': "Account Already Registered"}
+            return {'success': False, 'message': "Account Has Not Registered Yet"}
 
 if __name__ == "__main__":
     test = PasswordManager()
     test.connectDB()
     test.createTable("create_user_table")
     test.createTable("create_pm_table")
-    # test.register("test-02", "12345", "12345")
     test.viewUsers()
-    out = test.login("test-02", "12345")
-    print(out)
