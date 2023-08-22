@@ -14,6 +14,7 @@ class PasswordManager():
         self.commands = json.load(self.commands)
 
         self.salt = bcrypt.gensalt()
+        self.__key = None
 
     def connectDB(self) -> None:
         conn = None
@@ -24,7 +25,10 @@ class PasswordManager():
         finally:
             if conn:
                 self.conn = conn
-        
+    
+    def getKey(self) -> str:
+        return self.__key
+
     def createTable(self, commandName: str) -> dict:
         try:
             cursor = self.conn.cursor()
@@ -73,7 +77,8 @@ class PasswordManager():
             cursor.close()
 
             if bcrypt.checkpw(password.encode("utf-8"), passwordHash):
-                return {'success': True, 'message': "Login Successful", 'data': [userId, username, key]}
+                self.__key = key
+                return {'success': True, 'message': "Login Successful", 'data': [userId, username]}
             return {'success': False, 'message': "Wrong Password", 'data': []}
 
     def checkRegisteredUser(self, username: str) -> dict:
@@ -99,15 +104,13 @@ class PasswordManager():
             return {'success': False, 'message': e, 'data': []}
         finally:
             users = cursor.fetchall()
-            for user in users:
-                print(user)
             return {'success': True, 'message': '', 'data': users}
 
-    def insertData(self, userId: int, key: str, data: dict, isTest: bool = False) -> dict:
-        checkResult = self.checkRegisteredUserPM(data['websiteAddress'], data['username'])
+    def insertData(self, userId: int, data: dict, isTest: bool = False) -> dict:
+        checkResult = self.checkRegisteredUserPM(userId, data['websiteAddress'], data['username'])
         if checkResult['success']:
             return {'success': False, 'message': checkResult['message']}
-        fernet = Fernet(key.encode("utf-8"))
+        fernet = Fernet(self.__key.encode("utf-8"))
         encryptedPassword = fernet.encrypt(data['password'].encode("utf-8"))
         try:
             cursor = self.conn.cursor()
@@ -120,10 +123,24 @@ class PasswordManager():
             if not isTest: self.conn.commit()
             return {'success': True, 'message': "Insert Data Successfull"}
     
-    def checkRegisteredUserPM(self, websiteAddress: str, username: str) -> dict:
+    def fetchData(self, userId: int) -> dict:
         try:
             cursor = self.conn.cursor()
-            cursor.execute(self.commands["find_user_pm"], (websiteAddress, username))
+            cursor.execute(self.commands["select_user_pms"], (userId, ))
+        except Error as e:
+            print("Error:", e)
+            return {'success': False, 'message': e}
+        finally:
+            account = cursor.fetchall()
+            cursor.close()
+            if account is not None:
+                return {'success': True, 'message': "Registered Accounts", 'data': account}
+            return {'success': False, 'message': "No Registered Account Yet"}
+
+    def checkRegisteredUserPM(self, userId: int, websiteAddress: str, username: str) -> dict:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(self.commands["find_user_pm"], (websiteAddress, username, userId))
         except Error as e:
             print("Error:", e)
             return {'success': False, 'message': e}
@@ -139,4 +156,11 @@ if __name__ == "__main__":
     test.connectDB()
     test.createTable("create_user_table")
     test.createTable("create_pm_table")
-    test.viewUsers()
+    out = test.login('test-01', '12345')
+    print(out)
+    # out1 = test.insertData(out['data'][0], {'websiteAddress': 'https://google.com', 'username': 'chaoscrafty33@gmail.com', 'password': '12345'})
+    # print(out1)
+    out2 = test.fetchData(out['data'][0])
+    for i in out2['data']:
+        fernet = Fernet(test.getKey().encode('utf-8'))
+        print(fernet.decrypt(i[3]))

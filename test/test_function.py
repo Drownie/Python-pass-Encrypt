@@ -1,5 +1,10 @@
 import unittest
-from function import PasswordManager as pm
+from typer.testing import CliRunner
+
+from pypass.pypass import PasswordManager as pm
+from pypass import __app_name__, __version__, cli
+
+runner = CliRunner()
 
 class PasswordManagerFunction(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
@@ -38,6 +43,11 @@ class PasswordManagerFunction(unittest.TestCase):
     def test_insertData_registered_account(self):
         out = self.app.insertData(1, "q0jfKDAB-Tkn0eMKswLp0Jya-atIWg63LxvOpOReYhM=", {'websiteAddress': "https://www.google.com", 'username': "test123@gmail.com", 'password': "12344"}, True)
         self.assertDictEqual(out, {'success': False, 'message': 'Account Already Registered'})
+
+def test_version():
+    result = runner.invoke(cli.app, ["--version"])
+    assert result.exit_code == 0
+    assert f"{__app_name__} v{__version__}\n" in result.stdout
 
 if __name__ == "__main__":
     unittest.main()

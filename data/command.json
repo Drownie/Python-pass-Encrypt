@@ -4,6 +4,7 @@
     "insert_user": "INSERT INTO users(name, password, key) VALUES(?, ?, ?);",
     "insert_pm": "INSERT INTO pm(userId, websiteAddress, username, password) VALUES (?, ?, ?, ?);",
     "select_users": "SELECT id, name FROM users;",
+    "select_user_pms": "SELECT id, websiteAddress, username, password FROM pm WHERE userId = ?;",
     "find_user": "SELECT id, name, password, key FROM users WHERE name = ?;",
-    "find_user_pm": "SELECT id, userId, websiteAddress, username FROM pm WHERE websiteAddress = ? AND username = ?;"
+    "find_user_pm": "SELECT id, userId, websiteAddress, username FROM pm WHERE websiteAddress = ? AND username = ? AND userId = ?;"
 }
