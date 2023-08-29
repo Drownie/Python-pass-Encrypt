@@ -1,7 +1,7 @@
 import unittest
 from typer.testing import CliRunner
 
-from pypass.pypass import PasswordManager as pm
+from pypass.controller import PasswordManager as pm
 from pypass import __app_name__, __version__, cli
 
 runner = CliRunner()

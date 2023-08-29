@@ -9,7 +9,9 @@ __version__ = "2.0.0"
     DB_WRITE_ERROR,
     SQL_ERROR,
     ID_ERROR,
-) = range(7)
+    ERROR,
+    CONFLICT_ERROR
+) = range(9)
 
 ERRORS = {
     DIR_ERROR: "config directory error",

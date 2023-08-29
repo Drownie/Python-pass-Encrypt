@@ -1,5 +1,6 @@
 import configparser
 from pathlib import Path
+from cryptography.fernet import Fernet
 import typer
 
 from pypass import (DB_WRITE_ERROR, DIR_ERROR, FILE_ERROR, SUCCESS, __app_name__)
@@ -7,7 +8,7 @@ from pypass import (DB_WRITE_ERROR, DIR_ERROR, FILE_ERROR, SUCCESS, __app_name__
 CONFIG_DIR_PATH = Path(typer.get_app_dir(__app_name__))
 CONFIG_FILE_PATH = CONFIG_DIR_PATH / "config.ini"
 
-def init_app(db_path: str) -> int:
+def init_app(db_path: Path) -> int:
     config_code = _init_config_file()
     if config_code != SUCCESS:
         return config_code
@@ -27,9 +28,9 @@ def _init_config_file() -> int:
         return FILE_ERROR
     return SUCCESS
 
-def _create_database(db_path: str) -> int:
+def _create_database(db_path: Path) -> int:
     config_parser = configparser.ConfigParser()
-    config_parser["General"] = {"database": db_path}
+    config_parser["General"] = {"database": db_path, "key": Fernet.generate_key().decode('utf-8')}
     try:
         with CONFIG_FILE_PATH.open("w") as file:
             config_parser.write(file)
