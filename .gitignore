@@ -1,4 +1,8 @@
 old
 venv
 data
+build
+dist
+.pytest_cache
+PyPass_Manager.egg-info
 __pycache__/

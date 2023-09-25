@@ -1,53 +1,62 @@
-import unittest
+import pytest
 from typer.testing import CliRunner
+from cryptography.fernet import Fernet
 
-from pypass.controller import PasswordManager as pm
-from pypass import __app_name__, __version__, cli
+from pypass import (
+    __app_name__, 
+    __version__, 
+    cli,
+    controller,
+    SUCCESS,
+    DB_READ_ERROR,
+    DB_WRITE_ERROR
+)
 
 runner = CliRunner()
-
-class PasswordManagerFunction(unittest.TestCase):
-    def __init__(self, methodName: str = "runTest") -> None:
-        super().__init__(methodName)
-        self.app = pm()
-        self.app.connectDB()
-    
-    def test_createTable(self):
-        out = self.app.createTable("create_user_table")
-        self.assertDictEqual(out, {'success': True, 'message': "Table Successfully Created"})
-    
-    def test_register(self):
-        out = self.app.register("test-05", "12345", "12345", True)
-        self.assertDictEqual(out, {'success': True, 'message': 'User Successfully Created'})
-    
-    def test_register_already_registered(self):
-        out = self.app.register("test-01", "12345", "12345", True)
-        self.assertDictEqual(out, {'success': False, 'message': 'User Already Registered'})
-
-    def test_login(self):
-        out = self.app.login("test-02", "12345")
-        self.assertDictEqual(out, {'success': True, 'message': 'Login Successful', 'data': [2, 'test-02', '6ZUcmSmCAiubOFmRXfYb2QE8gQnP37G0r-qyHnF4Rvw=']})
-    
-    def test_login_wrong_password(self):
-        out = self.app.login("test-02", "12344")
-        self.assertDictEqual(out, {'success': False, 'message': 'Wrong Password', 'data': []})
-    
-    def test_login_unregistered_user(self):
-        out = self.app.login("test-10", "12345")
-        self.assertDictEqual(out, {'success': False, 'message': 'User Has Not Registered Yet', 'data': []})
-    
-    def test_insetData(self):
-        out = self.app.insertData(1, "q0jfKDAB-Tkn0eMKswLp0Jya-atIWg63LxvOpOReYhM=", {'websiteAddress': "https://www.yahoo.com", 'username': "test122@gmail.com", 'password': "12344"}, True)
-        self.assertDictEqual(out, {'success': True, 'message': "Insert Data Successfull"})
-    
-    def test_insertData_registered_account(self):
-        out = self.app.insertData(1, "q0jfKDAB-Tkn0eMKswLp0Jya-atIWg63LxvOpOReYhM=", {'websiteAddress': "https://www.google.com", 'username': "test123@gmail.com", 'password': "12344"}, True)
-        self.assertDictEqual(out, {'success': False, 'message': 'Account Already Registered'})
 
 def test_version():
     result = runner.invoke(cli.app, ["--version"])
     assert result.exit_code == 0
     assert f"{__app_name__} v{__version__}\n" in result.stdout
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.fixture
+def mock_db_file(tmp_path):
+    db_file = tmp_path / "sql.db"
+    return db_file
+
+test_data_1 = {
+    "username": "drownie",
+    "password": "12345",
+    "website": "google.com",
+    "expected": SUCCESS
+}
+
+test_data_2 = {
+    "username": "drownie2",
+    "password": "12345",
+    "website": "yahoo.com",
+    "expected": SUCCESS
+}
+
+@pytest.mark.parametrize(
+    "username, password, website, expected",
+    [
+        pytest.param(
+            test_data_1["username"],
+            test_data_1["password"],
+            test_data_1["website"],
+            test_data_1["expected"]
+        ),
+        pytest.param(
+            test_data_2["username"],
+            test_data_2["password"],
+            test_data_2["website"],
+            test_data_2["expected"]
+        ),
+    ],
+)
+def test_add(mock_db_file, username, password, website, expected):
+    pypass = controller.PyPassManager(mock_db_file, Fernet.generate_key().decode('utf-8'))
+    assert pypass.register_passdata(username, password, website).status == expected
+    read = pypass.get_all_passdata()
+    assert len(read.data) == 1
