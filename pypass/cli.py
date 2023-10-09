@@ -78,9 +78,46 @@ def add(
         raise typer.Exit(1)
 
 @app.command()
-def get() -> None:
+def get(
+    page: int = typer.Argument(0),
+    decrypt: bool = typer.Option(
+        False,
+        "--decrypt",
+        "-d",
+        help="Decrypt the stored pass data"
+    )) -> None:
     pypass = get_pypasmanager()
-    status, data = pypass.get_all_passdata()
+    status, data = pypass.get_all_passdata(page, decrypt)
+    if status == SUCCESS:
+        typer.secho(
+            "PyPass: successfully fetch",
+            fg=typer.colors.GREEN
+        )
+        for dat in data:
+            typer.secho(
+                f"| {dat[0]} | {dat[1]} | {dat[2]} | {dat[3]} |",
+                fg=typer.colors.CYAN
+            )
+    else:
+        typer.secho(
+            'Failed to fetch data',
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
+
+@app.command()
+def search(
+    page: int = typer.Argument(0),
+    username: str = typer.Option("", "--username", "-u"),
+    website_address: str = typer.Option("", "--website", "-w"),
+    decrypt: bool = typer.Option(
+        False,
+        "--decrypt",
+        "-d",
+        help="Decrypt the stored pass data"
+    )) -> None:
+    pypass = get_pypasmanager()
+    status, data = pypass.search_passdata(username, website_address, page, decrypt)
     if status == SUCCESS:
         typer.secho(
             "PyPass: successfully fetch",
