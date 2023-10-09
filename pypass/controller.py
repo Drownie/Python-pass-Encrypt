@@ -57,10 +57,37 @@ class PyPassManager:
         result = self._db_handler.fetch_passdata_by_id(pass_id)
         return PyResponse(result.status, result.data)
 
-    def get_all_passdata(self) -> PyResponse:
-        result = self._db_handler.fetch_passdata_all()
-        return PyResponse(result.status, result.data)
+    def get_all_passdata(self, page: int, decrypt: bool = False) -> PyResponse:
+        result = self._db_handler.fetch_passdata_all(page)
+        fernet = Fernet(self._key.encode('utf-8'))
+        if not decrypt:
+            return PyResponse(result.status, result.data)
+
+        decodedData = []
+        for i, passData in enumerate(result.data):
+            tmp = [data for data in result.data[i]]
+            tmp[-1] = fernet.decrypt(passData[-1]).decode('utf-8')
+            decodedData.append(tmp)
+        return PyResponse(result.status, decodedData)
     
+    def search_passdata(self, username: str, website_address: str, page: int, decrypt: bool = False) -> PyResponse:
+        data = {
+            "username": "%" + username + "%",
+            "websiteAddress": "%" + website_address + "%",
+            "page": page
+        }
+        result = self._db_handler.find_passdata(data)
+        fernet = Fernet(self._key.encode('utf-8'))
+        if not decrypt:
+            return PyResponse(result.status, result.data)
+
+        decodedData = []
+        for i, passData in enumerate(result.data):
+            tmp = [data for data in result.data[i]]
+            tmp[-1] = fernet.decrypt(passData[-1]).decode('utf-8')
+            decodedData.append(tmp)
+        return PyResponse(result.status, decodedData)
+
     def delete_passdata(self, pass_id: int) -> PyResponse:
         check_registered = self._db_handler.fetch_passdata_by_id(pass_id)
         if check_registered.status != SUCCESS:

@@ -63,12 +63,12 @@ class DBHandler:
         except Error:
             return DBResponse(DB_WRITE_ERROR, [])
     
-    def fetch_passdata_all(self) -> DBResponse:
-        command = "SELECT id, websiteAddress, username, password FROM passdata;"
+    def fetch_passdata_all(self, page: int) -> DBResponse:
+        command = "SELECT id, websiteAddress, username, password FROM passdata LIMIT 5 OFFSET ?;"
         try:
             cursor = self.connection.cursor()
-            cursor.execute(command)
-            passdata = cursor.fetchmany(10)
+            cursor.execute(command, ((5 * page), ))
+            passdata = cursor.fetchmany(5)
             cursor.close()
             return DBResponse(SUCCESS, passdata)
         except Error:
@@ -99,6 +99,17 @@ class DBHandler:
             return DBResponse(SUCCESS, passdata)
         except Error:
             return DBResponse(DB_READ_ERROR, [])
+
+    def find_passdata(self, data: dict) -> DBResponse:
+        command = "SELECT id, websiteAddress, username, password FROM passdata WHERE LIKE(?, username) AND LIKE(?, websiteAddress) LIMIT 5 OFFSET ?"
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(command, (data["username"], data["websiteAddress"], (5 * data["page"]), ))
+            passdata = cursor.fetchmany(5)
+            cursor.close()
+            return DBResponse(SUCCESS, passdata)
+        except Error:
+            return DBResponse(DB_READ_ERROR, [])     
 
     def update_passdata(self, data: dict) -> DBResponse:
         command = "UPDATE passdata SET websiteAddress = ?, username = ?, password = ? WHERE id = ?;"
