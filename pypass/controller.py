@@ -1,4 +1,3 @@
-import bcrypt
 from cryptography.fernet import Fernet
 from typing import Any, Dict, NamedTuple
 from pathlib import Path
@@ -15,7 +14,6 @@ class PyPassManager:
         self._db_handler = DBHandler(db_path)
         self._db_handler.connect_db()
         self._db_handler.create_passdata_db()
-        self._salt = bcrypt.gensalt()
         self._key = key
     
     def register_passdata(self, username: str, password: str, website_address: str) -> PyResponse:
